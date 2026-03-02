@@ -1,0 +1,55 @@
+# Outline - Local Docker deployment
+# Docs: https://docs.getoutline.com/s/hosting/doc/docker-7pfeLP5a8t
+
+services:
+  outline:
+    image: docker.getoutline.com/outlinewiki/outline:1.16.1
+    env_file: ./docker.env
+    expose:
+      - "3000"
+    ports:
+      - "3000:3000"
+    volumes:
+      - storage-data:/var/lib/outline/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    expose:
+      - "6379"
+    volumes:
+      - ./redis.conf:/redis.conf
+    command: ["redis-server", "/redis.conf"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    env_file: ./docker.env
+    expose:
+      - "5432"
+    volumes:
+      - database-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U outline -d outline"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_USER: outline
+      POSTGRES_PASSWORD: outline_password_change_me
+      POSTGRES_DB: outline
+    restart: unless-stopped
+
+volumes:
+  storage-data:
+  database-data:
