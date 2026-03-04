@@ -1,14 +1,12 @@
 # Outline - Local Docker deployment
-# Docs: https://docs.getoutline.com/s/hosting/doc/docker-7pfeLP5a8t
+# Access: http://localhost:8080 (Outline) | http://localhost:8025 (Mailhog - sign-in links)
 
 services:
   outline:
-    image: docker.getoutline.com/outlinewiki/outline:1.16.1
+    image: outlinewiki/outline:1.4.0
     env_file: ./docker.env
-    expose:
-      - "3000"
     ports:
-      - "3000:3000"
+      - "0.0.0.0:8080:3000"
     volumes:
       - storage-data:/var/lib/outline/data
     depends_on:
@@ -16,7 +14,15 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      mailhog:
+        condition: service_started
     restart: unless-stopped
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "8025:8025"
+      - "1025:1025"
 
   redis:
     image: redis:7-alpine
